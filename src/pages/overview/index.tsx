@@ -8,6 +8,7 @@ import {
   useTodayRecords,
   useTodayMedications,
   useAbnormalRecords,
+  useLatestTodayRecord,
 } from '@/store/healthStore';
 import {
   getRecordTypeName,
@@ -49,18 +50,14 @@ const OverviewPage: React.FC = () => {
   const abnormalRecords = useAbnormalRecords();
   const userProfile = useHealthStore((state) => state.userProfile);
 
+  const latestBP = useLatestTodayRecord('bloodPressure');
+  const latestBS = useLatestTodayRecord('bloodSugar');
+  const latestTemp = useLatestTodayRecord('temperature');
+  const latestWeight = useLatestTodayRecord('weight');
+
   useDidShow(() => {
-    console.log('[Overview] 页面显示');
+    console.log('[Overview] 页面显示，最新记录:', { latestBP, latestBS, latestTemp, latestWeight });
   });
-
-  const getLatestRecord = (type: HealthRecordType) => {
-    return todayRecords.find((r) => r.type === type);
-  };
-
-  const latestBP = getLatestRecord('bloodPressure');
-  const latestBS = getLatestRecord('bloodSugar');
-  const latestTemp = getLatestRecord('temperature');
-  const latestWeight = getLatestRecord('weight');
 
   const completedRecords = todayRecords.length;
   const totalExpected = 6;

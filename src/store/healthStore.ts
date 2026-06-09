@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import Taro from '@tarojs/taro';
 import dayjs from 'dayjs';
 import type {
   HealthRecord,
@@ -19,6 +20,38 @@ import { mockMedicationPlans, mockMedicationRecords } from '@/data/mockMedicatio
 import { mockFamilyMembers, mockCareTasks, mockFamilyMessages } from '@/data/mockFamily';
 import { mockFollowUpPlans, mockMedicalReports, mockAbnormalReports } from '@/data/mockFollowups';
 import { generateId, isRecordAbnormal } from '@/utils';
+
+const STORAGE_KEYS = {
+  HEALTH_RECORDS: 'health_records',
+  CARE_TASKS: 'care_tasks',
+  FAMILY_MESSAGES: 'family_messages',
+  PRIVACY_SETTINGS: 'privacy_settings',
+  MEDICAL_REPORTS: 'medical_reports',
+  ABNORMAL_REPORTS: 'abnormal_reports',
+  MEDICATION_RECORDS: 'medication_records',
+  FOLLOWUP_PLANS: 'followup_plans',
+};
+
+const loadFromStorage = <T>(key: string, defaultValue: T): T => {
+  try {
+    const data = Taro.getStorageSync(key);
+    if (data) {
+      console.log(`[Store] 从本地存储加载 ${key}:`, data.length || data);
+      return data as T;
+    }
+  } catch (e) {
+    console.warn(`[Store] 加载本地存储失败 ${key}:`, e);
+  }
+  return defaultValue;
+};
+
+const saveToStorage = <T>(key: string, data: T): void => {
+  try {
+    Taro.setStorageSync(key, data);
+  } catch (e) {
+    console.warn(`[Store] 保存本地存储失败 ${key}:`, e);
+  }
+};
 
 interface HealthState {
   // 数据
@@ -44,38 +77,50 @@ interface HealthState {
   addMedicalReport: (report: Omit<MedicalReport, 'id'>) => void;
   updateFollowUpStatus: (planId: string, status: FollowUpPlan['status']) => void;
   updatePrivacySettings: (settings: Partial<PrivacySettings>) => void;
-  exportArchive: (startDate: string, endDate: string) => object;
+  exportArchive: (
+    startDate: string,
+    endDate: string,
+    options?: {
+      recordTypes?: HealthRecordType[];
+      includeMedication?: boolean;
+      includeFollowUp?: boolean;
+    }
+  ) => object;
 }
 
+const defaultUserProfile: UserProfile = {
+  id: 'user-001',
+  name: '张父',
+  birthDate: '1955-03-15',
+  gender: 'male',
+  phone: '13800138001',
+  height: 170,
+  weight: 72.5,
+  bloodType: 'A',
+  allergies: ['青霉素'],
+  chronicDiseases: ['高血压', '2型糖尿病'],
+};
+
+const defaultPrivacySettings: PrivacySettings = {
+  allowFamilyView: true,
+  allowFamilyEdit: true,
+  dataEncrypted: true,
+  autoBackup: true,
+};
+
 export const useHealthStore = create<HealthState>((set, get) => ({
-  // 初始数据
-  healthRecords: mockHealthRecords,
+  // 初始数据 - 优先从本地存储加载
+  healthRecords: loadFromStorage(STORAGE_KEYS.HEALTH_RECORDS, mockHealthRecords),
   medicationPlans: mockMedicationPlans,
-  medicationRecords: mockMedicationRecords,
-  followUpPlans: mockFollowUpPlans,
-  medicalReports: mockMedicalReports,
-  abnormalReports: mockAbnormalReports,
+  medicationRecords: loadFromStorage(STORAGE_KEYS.MEDICATION_RECORDS, mockMedicationRecords),
+  followUpPlans: loadFromStorage(STORAGE_KEYS.FOLLOWUP_PLANS, mockFollowUpPlans),
+  medicalReports: loadFromStorage(STORAGE_KEYS.MEDICAL_REPORTS, mockMedicalReports),
+  abnormalReports: loadFromStorage(STORAGE_KEYS.ABNORMAL_REPORTS, mockAbnormalReports),
   familyMembers: mockFamilyMembers,
-  careTasks: mockCareTasks,
-  familyMessages: mockFamilyMessages,
-  userProfile: {
-    id: 'user-001',
-    name: '张父',
-    birthDate: '1955-03-15',
-    gender: 'male',
-    phone: '13800138001',
-    height: 170,
-    weight: 72.5,
-    bloodType: 'A',
-    allergies: ['青霉素'],
-    chronicDiseases: ['高血压', '2型糖尿病'],
-  },
-  privacySettings: {
-    allowFamilyView: true,
-    allowFamilyEdit: true,
-    dataEncrypted: true,
-    autoBackup: true,
-  },
+  careTasks: loadFromStorage(STORAGE_KEYS.CARE_TASKS, mockCareTasks),
+  familyMessages: loadFromStorage(STORAGE_KEYS.FAMILY_MESSAGES, mockFamilyMessages),
+  userProfile: defaultUserProfile,
+  privacySettings: loadFromStorage(STORAGE_KEYS.PRIVACY_SETTINGS, defaultPrivacySettings),
 
   // 添加健康记录
   addHealthRecord: (record) => {
@@ -86,28 +131,29 @@ export const useHealthStore = create<HealthState>((set, get) => ({
     };
     newRecord.isAbnormal = isRecordAbnormal(newRecord);
     console.log('[Store] 添加健康记录:', newRecord);
-    set((state) => ({
-      healthRecords: [newRecord, ...state.healthRecords],
-    }));
+    set((state) => {
+      const newRecords = [newRecord, ...state.healthRecords];
+      saveToStorage(STORAGE_KEYS.HEALTH_RECORDS, newRecords);
+      return { healthRecords: newRecords };
+    });
   },
 
   // 更新用药状态
   updateMedicationStatus: (recordId, status, takenAt, planId) => {
     console.log('[Store] 更新用药状态:', recordId, status, takenAt, planId);
     set((state) => {
+      let newRecords: MedicationRecord[];
       const existingRecord = state.medicationRecords.find((r) => r.id === recordId);
       if (existingRecord) {
-        return {
-          medicationRecords: state.medicationRecords.map((record) =>
-            record.id === recordId
-              ? {
-                  ...record,
-                  status,
-                  takenAt: takenAt || dayjs().toISOString(),
-                }
-              : record
-          ),
-        };
+        newRecords = state.medicationRecords.map((record) =>
+          record.id === recordId
+            ? {
+                ...record,
+                status,
+                takenAt: takenAt || dayjs().toISOString(),
+              }
+            : record
+        );
       } else {
         const plan = planId ? state.medicationPlans.find((p) => p.id === planId) : null;
         const newRecord: MedicationRecord = {
@@ -118,10 +164,10 @@ export const useHealthStore = create<HealthState>((set, get) => ({
           takenAt: takenAt || dayjs().toISOString(),
           status,
         };
-        return {
-          medicationRecords: [newRecord, ...state.medicationRecords],
-        };
+        newRecords = [newRecord, ...state.medicationRecords];
       }
+      saveToStorage(STORAGE_KEYS.MEDICATION_RECORDS, newRecords);
+      return { medicationRecords: newRecords };
     });
   },
 
@@ -133,19 +179,23 @@ export const useHealthStore = create<HealthState>((set, get) => ({
       createdAt: dayjs().toISOString(),
     };
     console.log('[Store] 添加照护任务:', newTask);
-    set((state) => ({
-      careTasks: [...state.careTasks, newTask],
-    }));
+    set((state) => {
+      const newTasks = [...state.careTasks, newTask];
+      saveToStorage(STORAGE_KEYS.CARE_TASKS, newTasks);
+      return { careTasks: newTasks };
+    });
   },
 
   // 更新任务状态
   updateCareTaskStatus: (taskId, status) => {
     console.log('[Store] 更新任务状态:', taskId, status);
-    set((state) => ({
-      careTasks: state.careTasks.map((task) =>
+    set((state) => {
+      const newTasks = state.careTasks.map((task) =>
         task.id === taskId ? { ...task, status } : task
-      ),
-    }));
+      );
+      saveToStorage(STORAGE_KEYS.CARE_TASKS, newTasks);
+      return { careTasks: newTasks };
+    });
   },
 
   // 添加家人留言
@@ -156,9 +206,11 @@ export const useHealthStore = create<HealthState>((set, get) => ({
       createdAt: dayjs().toISOString(),
     };
     console.log('[Store] 添加家人留言:', newMessage);
-    set((state) => ({
-      familyMessages: [...state.familyMessages, newMessage],
-    }));
+    set((state) => {
+      const newMessages = [...state.familyMessages, newMessage];
+      saveToStorage(STORAGE_KEYS.FAMILY_MESSAGES, newMessages);
+      return { familyMessages: newMessages };
+    });
   },
 
   // 添加异常上报
@@ -169,9 +221,11 @@ export const useHealthStore = create<HealthState>((set, get) => ({
       reportedAt: dayjs().toISOString(),
     };
     console.log('[Store] 添加异常上报:', newReport);
-    set((state) => ({
-      abnormalReports: [newReport, ...state.abnormalReports],
-    }));
+    set((state) => {
+      const newReports = [newReport, ...state.abnormalReports];
+      saveToStorage(STORAGE_KEYS.ABNORMAL_REPORTS, newReports);
+      return { abnormalReports: newReports };
+    });
   },
 
   // 添加检查报告
@@ -181,55 +235,86 @@ export const useHealthStore = create<HealthState>((set, get) => ({
       id: generateId(),
     };
     console.log('[Store] 添加检查报告:', newReport);
-    set((state) => ({
-      medicalReports: [newReport, ...state.medicalReports],
-    }));
+    set((state) => {
+      const newReports = [newReport, ...state.medicalReports];
+      saveToStorage(STORAGE_KEYS.MEDICAL_REPORTS, newReports);
+      return { medicalReports: newReports };
+    });
   },
 
   // 更新复诊计划状态
   updateFollowUpStatus: (planId, status) => {
     console.log('[Store] 更新复诊计划状态:', planId, status);
-    set((state) => ({
-      followUpPlans: state.followUpPlans.map((plan) =>
+    set((state) => {
+      const newPlans = state.followUpPlans.map((plan) =>
         plan.id === planId ? { ...plan, status } : plan
-      ),
-    }));
+      );
+      saveToStorage(STORAGE_KEYS.FOLLOWUP_PLANS, newPlans);
+      return { followUpPlans: newPlans };
+    });
   },
 
   // 更新隐私设置
   updatePrivacySettings: (settings) => {
     console.log('[Store] 更新隐私设置:', settings);
-    set((state) => ({
-      privacySettings: { ...state.privacySettings, ...settings },
-    }));
+    set((state) => {
+      const newSettings = { ...state.privacySettings, ...settings };
+      saveToStorage(STORAGE_KEYS.PRIVACY_SETTINGS, newSettings);
+      return { privacySettings: newSettings };
+    });
   },
 
-  // 导出档案
-  exportArchive: (startDate, endDate) => {
+  // 导出档案 - 支持按选择导出
+  exportArchive: (
+    startDate: string,
+    endDate: string,
+    options?: {
+      recordTypes?: HealthRecordType[];
+      includeMedication?: boolean;
+      includeFollowUp?: boolean;
+    }
+  ) => {
     const state = get();
     const start = dayjs(startDate).startOf('day');
     const end = dayjs(endDate).endOf('day');
+    const opts = {
+      recordTypes: ['bloodPressure', 'bloodSugar', 'temperature', 'weight'] as HealthRecordType[],
+      includeMedication: true,
+      includeFollowUp: true,
+      ...options,
+    };
 
     const filteredRecords = state.healthRecords.filter((r) => {
       const date = dayjs(r.recordedAt);
-      return date.isAfter(start) && date.isBefore(end);
+      const typeMatch = opts.recordTypes.includes(r.type);
+      return date.isAfter(start) && date.isBefore(end) && typeMatch;
     });
 
-    const archive = {
+    const archive: Record<string, unknown> = {
       exportDate: dayjs().toISOString(),
       dateRange: { startDate, endDate },
       userProfile: state.userProfile,
       healthRecords: filteredRecords,
-      medicationPlans: state.medicationPlans,
-      followUpPlans: state.followUpPlans.filter((f) => {
+    };
+
+    if (opts.includeMedication) {
+      archive.medicationPlans = state.medicationPlans;
+      archive.medicationRecords = state.medicationRecords.filter((r) => {
+        const date = dayjs(r.takenAt);
+        return date.isAfter(start) && date.isBefore(end);
+      });
+    }
+
+    if (opts.includeFollowUp) {
+      archive.followUpPlans = state.followUpPlans.filter((f) => {
         const date = dayjs(f.date);
         return date.isAfter(start) && date.isBefore(end);
-      }),
-      medicalReports: state.medicalReports.filter((r) => {
+      });
+      archive.medicalReports = state.medicalReports.filter((r) => {
         const date = dayjs(r.date);
         return date.isAfter(start) && date.isBefore(end);
-      }),
-    };
+      });
+    }
 
     console.log('[Store] 导出档案:', archive);
     return archive;
@@ -245,6 +330,12 @@ export const useTodayRecords = (type?: HealthRecordType) => {
     const typeMatch = type ? r.type === type : true;
     return recordDate === today && typeMatch;
   });
+};
+
+// 获取当天某类型的最新记录（按时间倒序取第一条）
+export const useLatestTodayRecord = (type: HealthRecordType) => {
+  const todayRecords = useTodayRecords(type);
+  return todayRecords.length > 0 ? todayRecords[0] : null;
 };
 
 export const useAbnormalRecords = () => {

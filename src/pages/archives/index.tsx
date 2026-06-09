@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, Button, ScrollView, Switch, Input } from '@tarojs/components';
+import { View, Text, Button, ScrollView, Switch, Input, Textarea } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import dayjs from 'dayjs';
 import classnames from 'classnames';
 import { useHealthStore } from '@/store/healthStore';
+import { getRecordTypeName } from '@/utils';
 import type { HealthRecordType } from '@/types';
 import styles from './index.module.scss';
 
 const ArchivesPage: React.FC = () => {
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showExportResult, setShowExportResult] = useState(false);
+  const [exportContent, setExportContent] = useState('');
   const [exportStartDate, setExportStartDate] = useState(dayjs().subtract(30, 'day').format('YYYY-MM-DD'));
   const [exportEndDate, setExportEndDate] = useState(dayjs().format('YYYY-MM-DD'));
   const [selectedTypes, setSelectedTypes] = useState<HealthRecordType[]>(['bloodPressure', 'bloodSugar', 'temperature', 'weight']);
@@ -22,6 +25,7 @@ const ArchivesPage: React.FC = () => {
   const privacySettings = useHealthStore((state) => state.privacySettings);
   const updatePrivacySettings = useHealthStore((state) => state.updatePrivacySettings);
   const exportArchive = useHealthStore((state) => state.exportArchive);
+  const addMedicalReport = useHealthStore((state) => state.addMedicalReport);
 
   useDidShow(() => {
     console.log('[Archives] 页面显示');
@@ -46,22 +50,138 @@ const ArchivesPage: React.FC = () => {
     console.log('[Archives] 上传报告');
     Taro.chooseImage({
       count: 1,
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
       success: (res) => {
-        console.log('[Archives] 选择图片:', res.tempFilePaths);
+        const imageUrl = res.tempFilePaths[0];
+        console.log('[Archives] 选择图片:', imageUrl);
+        
+        addMedicalReport({
+          title: '检查报告',
+          type: '影像检查',
+          date: dayjs().format('YYYY-MM-DD'),
+          hospital: '手动上传',
+          description: '用户上传的检查报告',
+          imageUrl,
+          notes: '',
+        });
+        
         Taro.showToast({ title: '上传成功', icon: 'success' });
+        console.log('[Archives] 报告已保存到列表');
       },
       fail: (err) => console.error('[Archives] 选择图片失败:', err),
     });
   };
 
+  const formatArchiveToText = (archive: Record<string, unknown>): string => {
+    const lines: string[] = [];
+    lines.push('========================================');
+    lines.push('           健康档案导出报告');
+    lines.push('========================================');
+    lines.push(`导出时间: ${dayjs().format('YYYY-MM-DD HH:mm:ss')}`);
+    lines.push(`时间范围: ${exportStartDate} 至 ${exportEndDate}`);
+    lines.push('');
+
+    const profile = archive.userProfile as Record<string, unknown>;
+    lines.push('【个人信息】');
+    lines.push(`  姓名: ${profile.name}`);
+    lines.push(`  性别: ${profile.gender === 'male' ? '男' : '女'}`);
+    lines.push(`  出生日期: ${profile.birthDate}`);
+    lines.push(`  联系电话: ${profile.phone}`);
+    lines.push(`  身高/体重: ${profile.height}cm / ${profile.weight}kg`);
+    lines.push(`  血型: ${profile.bloodType}型`);
+    lines.push(`  慢性病: ${(profile.chronicDiseases as string[])?.join('、') || '无'}`);
+    lines.push(`  过敏史: ${(profile.allergies as string[])?.join('、') || '无'}`);
+    lines.push('');
+
+    const records = archive.healthRecords as Record<string, unknown>[];
+    if (records && records.length > 0) {
+      lines.push('【健康记录】');
+      records.forEach((record, idx) => {
+        const typeName = getRecordTypeName(record.type as HealthRecordType);
+        const date = dayjs(record.recordedAt as string).format('YYYY-MM-DD HH:mm');
+        const data = record.data as Record<string, unknown>;
+        let valueStr = '';
+        
+        if (record.type === 'bloodPressure') {
+          valueStr = `${data.systolic}/${data.diastolic} mmHg`;
+          if (data.pulse) valueStr += `, 脉搏: ${data.pulse} 次/分`;
+        } else if (record.type === 'bloodSugar') {
+          valueStr = `${data.value} mmol/L (${data.period === 'fasting' ? '空腹' : '餐后'})`;
+        } else if (record.type === 'temperature') {
+          valueStr = `${data.value} °C`;
+        } else if (record.type === 'weight') {
+          valueStr = `${data.value} kg`;
+          if (data.bmi) valueStr += `, BMI: ${data.bmi}`;
+        }
+        
+        lines.push(`  ${idx + 1}. [${date}] ${typeName}: ${valueStr}`);
+        if (record.isAbnormal) lines.push(`     ⚠️ 异常值`);
+        if (record.note) lines.push(`     备注: ${record.note}`);
+      });
+      lines.push('');
+    }
+
+    if (includeMedications && archive.medicationRecords) {
+      const meds = archive.medicationRecords as Record<string, unknown>[];
+      if (meds.length > 0) {
+        lines.push('【用药记录】');
+        meds.forEach((med, idx) => {
+          const date = dayjs(med.takenAt as string).format('YYYY-MM-DD HH:mm');
+          const statusText = med.status === 'taken' ? '已服用' : med.status === 'missed' ? '漏服' : '待服用';
+          lines.push(`  ${idx + 1}. [${date}] ${med.name} - ${statusText}`);
+        });
+        lines.push('');
+      }
+    }
+
+    if (includeFollowUps && archive.followUpPlans) {
+      const plans = archive.followUpPlans as Record<string, unknown>[];
+      if (plans.length > 0) {
+        lines.push('【复诊计划】');
+        plans.forEach((plan, idx) => {
+          const statusText = plan.status === 'completed' ? '已完成' : '待复诊';
+          lines.push(`  ${idx + 1}. [${plan.date} ${plan.time}] ${plan.title} - ${statusText}`);
+          lines.push(`     医院: ${plan.hospital}, 科室: ${plan.department}`);
+        });
+        lines.push('');
+      }
+    }
+
+    lines.push('========================================');
+    lines.push('        报告结束');
+    lines.push('========================================');
+
+    return lines.join('\n');
+  };
+
   const handleExport = () => {
     console.log('[Archives] 导出档案');
-    const archive = exportArchive(exportStartDate, exportEndDate);
-    Taro.showModal({
-      title: '导出成功',
-      content: `已导出 ${(archive as { healthRecords?: unknown[] }).healthRecords?.length || 0} 条健康记录，\n包含 ${includeMedications ? '用药记录、' : ''}${includeFollowUps ? '复诊计划' : ''}`,
-      showCancel: false,
-      success: () => setShowExportModal(false),
+    if (selectedTypes.length === 0) {
+      Taro.showToast({ title: '请至少选择一种数据类型', icon: 'none' });
+      return;
+    }
+
+    const archive = exportArchive(exportStartDate, exportEndDate, {
+      recordTypes: selectedTypes,
+      includeMedication: includeMedications,
+      includeFollowUp: includeFollowUps,
+    });
+
+    const textContent = formatArchiveToText(archive as Record<string, unknown>);
+    setExportContent(textContent);
+    setShowExportModal(false);
+    setShowExportResult(true);
+
+    console.log('[Archives] 导出内容已生成');
+  };
+
+  const handleCopyContent = () => {
+    Taro.setClipboardData({
+      data: exportContent,
+      success: () => {
+        Taro.showToast({ title: '已复制到剪贴板', icon: 'success' });
+      },
     });
   };
 
@@ -336,6 +456,43 @@ const ArchivesPage: React.FC = () => {
                 onClick={handleExport}
               >
                 确认导出
+              </Button>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {showExportResult && (
+        <View className={styles.exportModal} onClick={() => setShowExportResult(false)}>
+          <View className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <View className={styles.modalHeader}>
+              <Text className={styles.modalTitle}>导出成功</Text>
+              <Text className={styles.modalClose} onClick={() => setShowExportResult(false)}>×</Text>
+            </View>
+
+            <Text className={styles.exportSubtitle}>以下内容可复制保存</Text>
+
+            <ScrollView className={styles.exportContent} scrollY>
+              <Textarea
+                className={styles.exportTextarea}
+                value={exportContent}
+                disabled
+                autoHeight
+              />
+            </ScrollView>
+
+            <View className={styles.modalButtons}>
+              <Button
+                className={classnames(styles.modalButton, styles.secondary)}
+                onClick={() => setShowExportResult(false)}
+              >
+                关闭
+              </Button>
+              <Button
+                className={classnames(styles.modalButton, styles.primary)}
+                onClick={handleCopyContent}
+              >
+                复制全部内容
               </Button>
             </View>
           </View>

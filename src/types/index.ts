@@ -126,6 +126,7 @@ export interface CareTask {
   dueDate: string;
   status: 'pending' | 'inProgress' | 'completed';
   createdAt: string;
+  createdBy?: string;
 }
 
 // 家人留言

@@ -371,3 +371,40 @@
   color: $color-text-tertiary;
   font-size: $font-size-sm;
 }
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.modalClose {
+  font-size: 48rpx;
+  color: $color-text-tertiary;
+  line-height: 1;
+}
+
+.exportSubtitle {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-md;
+}
+
+.exportContent {
+  max-height: 600rpx;
+  background: $color-bg-secondary;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.exportTextarea {
+  width: 100%;
+  min-height: 500rpx;
+  font-size: $font-size-xs;
+  color: $color-text-primary;
+  background: transparent;
+  line-height: 1.6;
+  font-family: monospace;
+}

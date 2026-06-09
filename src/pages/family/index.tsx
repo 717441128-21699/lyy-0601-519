@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, Button, ScrollView, Input } from '@tarojs/components';
+import { View, Text, Button, ScrollView, Input, Textarea, Picker } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import classnames from 'classnames';
+import dayjs from 'dayjs';
 import { useHealthStore } from '@/store/healthStore';
 import { formatDate, getRelativeTime } from '@/utils';
 import type { CareTask } from '@/types';
@@ -12,6 +13,11 @@ type TaskFilter = 'all' | 'pending' | 'inProgress' | 'completed';
 const FamilyPage: React.FC = () => {
   const [taskFilter, setTaskFilter] = useState<TaskFilter>('all');
   const [messageText, setMessageText] = useState('');
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskDescription, setTaskDescription] = useState('');
+  const [selectedAssignee, setSelectedAssignee] = useState('');
+  const [dueDate, setDueDate] = useState(dayjs().add(1, 'day').format('YYYY-MM-DD'));
 
   const familyMembers = useHealthStore((state) => state.familyMembers);
   const careTasks = useHealthStore((state) => state.careTasks);
@@ -19,10 +25,49 @@ const FamilyPage: React.FC = () => {
   const userProfile = useHealthStore((state) => state.userProfile);
   const updateCareTaskStatus = useHealthStore((state) => state.updateCareTaskStatus);
   const addFamilyMessage = useHealthStore((state) => state.addFamilyMessage);
+  const addCareTask = useHealthStore((state) => state.addCareTask);
 
   useDidShow(() => {
-    console.log('[Family] 页面显示');
+    console.log('[Family] 页面显示，任务数量:', careTasks.length);
   });
+
+  const openTaskModal = () => {
+    setTaskTitle('');
+    setTaskDescription('');
+    setSelectedAssignee(familyMembers[0]?.id || '');
+    setDueDate(dayjs().add(1, 'day').format('YYYY-MM-DD'));
+    setShowTaskModal(true);
+  };
+
+  const handleCreateTask = () => {
+    if (!taskTitle.trim()) {
+      Taro.showToast({ title: '请输入任务内容', icon: 'none' });
+      return;
+    }
+    if (!selectedAssignee) {
+      Taro.showToast({ title: '请选择负责人', icon: 'none' });
+      return;
+    }
+    const assignee = familyMembers.find((m) => m.id === selectedAssignee);
+    if (!assignee) {
+      Taro.showToast({ title: '请选择有效的负责人', icon: 'none' });
+      return;
+    }
+
+    addCareTask({
+      title: taskTitle.trim(),
+      description: taskDescription.trim() || undefined,
+      assigneeId: selectedAssignee,
+      assigneeName: assignee.name,
+      dueDate,
+      status: 'pending',
+      createdBy: userProfile.name,
+    });
+
+    setShowTaskModal(false);
+    Taro.showToast({ title: '任务创建成功', icon: 'success' });
+    console.log('[Family] 任务已创建:', taskTitle, '负责人:', assignee.name, '截止:', dueDate);
+  };
 
   const filteredTasks = useMemo(() => {
     if (taskFilter === 'all') return careTasks;
@@ -126,7 +171,7 @@ const FamilyPage: React.FC = () => {
         <View className={styles.section}>
           <View className={styles.sectionHeader}>
             <Text className={styles.sectionTitle}>照护任务</Text>
-            <Text className={styles.sectionAction}>新建任务</Text>
+            <Text className={styles.sectionAction} onClick={openTaskModal}>新建任务</Text>
           </View>
           <View className={styles.taskTabBar}>
             {taskTabs.map((tab) => (
@@ -212,15 +257,88 @@ const FamilyPage: React.FC = () => {
         </View>
       </View>
 
-      <View
-        className={styles.fabButton}
-        onClick={() => {
-          console.log('[Family] 新建任务');
-          Taro.showToast({ title: '新建任务', icon: 'none' });
-        }}
-      >
+      <View className={styles.fabButton} onClick={openTaskModal}>
         +
       </View>
+
+      {showTaskModal && (
+        <View className={styles.modalOverlay} onClick={() => setShowTaskModal(false)}>
+          <View className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <View className={styles.modalHeader}>
+              <Text className={styles.modalTitle}>新建照护任务</Text>
+              <Text className={styles.modalClose} onClick={() => setShowTaskModal(false)}>×</Text>
+            </View>
+
+            <View className={styles.modalBody}>
+              <View className={styles.formItem}>
+                <Text className={styles.formLabel}>任务内容 *</Text>
+                <Input
+                  className={styles.formInput}
+                  value={taskTitle}
+                  onInput={(e) => setTaskTitle(e.detail.value)}
+                  placeholder="请输入任务内容，如：帮老人测量血压"
+                />
+              </View>
+
+              <View className={styles.formItem}>
+                <Text className={styles.formLabel}>任务描述</Text>
+                <Textarea
+                  className={styles.formTextarea}
+                  value={taskDescription}
+                  onInput={(e) => setTaskDescription(e.detail.value)}
+                  placeholder="请输入任务详细描述（选填）"
+                />
+              </View>
+
+              <View className={styles.formItem}>
+                <Text className={styles.formLabel}>负责人 *</Text>
+                <Picker
+                  mode="selector"
+                  range={familyMembers.map((m) => m.name)}
+                  rangeKey="name"
+                  value={familyMembers.findIndex((m) => m.id === selectedAssignee)}
+                  onChange={(e) => {
+                    const idx = Number(e.detail.value);
+                    setSelectedAssignee(familyMembers[idx]?.id || '');
+                  }}
+                >
+                  <View className={styles.formPicker}>
+                    <Text className={selectedAssignee ? styles.pickerText : styles.pickerPlaceholder}>
+                      {familyMembers.find((m) => m.id === selectedAssignee)?.name || '请选择负责人'}
+                    </Text>
+                    <Text className={styles.pickerArrow}>▼</Text>
+                  </View>
+                </Picker>
+              </View>
+
+              <View className={styles.formItem}>
+                <Text className={styles.formLabel}>截止时间 *</Text>
+                <Picker
+                  mode="date"
+                  value={dueDate}
+                  start={dayjs().format('YYYY-MM-DD')}
+                  end={dayjs().add(1, 'year').format('YYYY-MM-DD')}
+                  onChange={(e) => setDueDate(e.detail.value)}
+                >
+                  <View className={styles.formPicker}>
+                    <Text className={styles.pickerText}>{dueDate}</Text>
+                    <Text className={styles.pickerArrow}>▼</Text>
+                  </View>
+                </Picker>
+              </View>
+            </View>
+
+            <View className={styles.modalFooter}>
+              <Button className={styles.modalCancel} onClick={() => setShowTaskModal(false)}>
+                取消
+              </Button>
+              <Button className={styles.modalConfirm} onClick={handleCreateTask}>
+                创建任务
+              </Button>
+            </View>
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 };
