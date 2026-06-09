@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, Button, ScrollView, Input, Textarea, Picker } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import classnames from 'classnames';
@@ -95,11 +95,6 @@ const FamilyPage: React.FC = () => {
     });
 
     setCommentText('');
-    
-    const updatedTask = careTasks.find(t => t.id === selectedTask.id);
-    if (updatedTask) {
-      setSelectedTask({ ...updatedTask });
-    }
     Taro.showToast({ title: '评论已发送', icon: 'success' });
   };
 
@@ -115,10 +110,6 @@ const FamilyPage: React.FC = () => {
       operatedBy: userProfile.name,
     });
     
-    const updatedTask = careTasks.find(t => t.id === task.id);
-    if (updatedTask) {
-      setSelectedTask({ ...updatedTask });
-    }
     Taro.showToast({ title: '状态已更新', icon: 'success' });
   };
 
@@ -131,7 +122,6 @@ const FamilyPage: React.FC = () => {
     });
     
     setShowCompleteModal(false);
-    setShowDetailModal(false);
     Taro.showToast({ title: '任务已完成', icon: 'success' });
   };
 
@@ -148,6 +138,15 @@ const FamilyPage: React.FC = () => {
     if (taskFilter === 'all') return careTasks;
     return careTasks.filter((t) => t.status === taskFilter);
   }, [careTasks, taskFilter]);
+
+  useEffect(() => {
+    if (selectedTask && showDetailModal) {
+      const freshTask = careTasks.find(t => t.id === selectedTask.id);
+      if (freshTask && freshTask !== selectedTask) {
+        setSelectedTask({ ...freshTask });
+      }
+    }
+  }, [careTasks, selectedTask, showDetailModal]);
 
   const handleCall = (phone: string, name: string) => {
     console.log('[Family] 拨打电话:', name, phone);

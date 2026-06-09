@@ -9,6 +9,7 @@ import {
   useTodayMedications,
   useAbnormalRecords,
   useLatestTodayRecord,
+  useUpcomingFollowUp,
 } from '@/store/healthStore';
 import {
   getRecordTypeName,
@@ -54,6 +55,7 @@ const OverviewPage: React.FC = () => {
   const latestBS = useLatestTodayRecord('bloodSugar');
   const latestTemp = useLatestTodayRecord('temperature');
   const latestWeight = useLatestTodayRecord('weight');
+  const upcomingFollowUp = useUpcomingFollowUp();
 
   useDidShow(() => {
     console.log('[Overview] 页面显示，最新记录:', { latestBP, latestBS, latestTemp, latestWeight });
@@ -269,6 +271,43 @@ const OverviewPage: React.FC = () => {
             )}
           </View>
         </View>
+
+        {upcomingFollowUp && (
+          <View className={styles.followUpCard} onClick={() => handleNavigate('/pages/followup/index')}>
+            <View className={styles.followUpHeader}>
+              <View className={styles.followUpIcon}>诊</View>
+              <Text className={styles.followUpTitle}>最近待复诊</Text>
+              <Text className={styles.followUpMore}>查看详情 →</Text>
+            </View>
+            <View className={styles.followUpContent}>
+              <View className={styles.followUpRow}>
+                <Text className={styles.followUpLabel}>医院</Text>
+                <Text className={styles.followUpValue}>{upcomingFollowUp.hospital}</Text>
+              </View>
+              <View className={styles.followUpRow}>
+                <Text className={styles.followUpLabel}>科室</Text>
+                <Text className={styles.followUpValue}>{upcomingFollowUp.department}</Text>
+              </View>
+              {upcomingFollowUp.doctor && (
+                <View className={styles.followUpRow}>
+                  <Text className={styles.followUpLabel}>医生</Text>
+                  <Text className={styles.followUpValue}>{upcomingFollowUp.doctor}</Text>
+                </View>
+              )}
+              <View className={styles.followUpRow}>
+                <Text className={styles.followUpLabel}>时间</Text>
+                <Text className={styles.followUpTime}>
+                  {dayjs(upcomingFollowUp.date).format('YYYY-MM-DD HH:mm')}
+                </Text>
+              </View>
+              {upcomingFollowUp.notes && (
+                <View className={styles.followUpNotes}>
+                  <Text className={styles.followUpNotesText}>📝 {upcomingFollowUp.notes}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
 
         <View className={styles.section}>
           <View className={styles.sectionHeader}>

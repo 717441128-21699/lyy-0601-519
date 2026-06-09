@@ -29,7 +29,7 @@ const MedicationPage: React.FC = () => {
   });
 
   const getRecordsByDate = (date: string) => {
-    return medicationRecords.filter((r) => dayjs(r.takenAt).format('YYYY-MM-DD') === date);
+    return medicationRecords.filter((r) => dayjs(r.scheduledTime).format('YYYY-MM-DD') === date);
   };
 
   const getStatsByDate = (date: string) => {
@@ -41,12 +41,11 @@ const MedicationPage: React.FC = () => {
   };
 
   const todayStats = useMemo(() => getStatsByDate(dayjs().format('YYYY-MM-DD')), [medicationRecords, medicationPlans]);
-  const selectedDateStats = useMemo(() => getStatsByDate(selectedDate), [selectedDate, medicationRecords, medicationPlans]);
 
   const getRecordForPlan = (planId: string, time: string, date: string) => {
     return medicationRecords.find((r) => {
-      const recordDate = dayjs(r.takenAt).format('YYYY-MM-DD');
-      const recordTime = dayjs(r.takenAt).format('HH:mm');
+      const recordDate = dayjs(r.scheduledTime).format('YYYY-MM-DD');
+      const recordTime = dayjs(r.scheduledTime).format('HH:mm');
       return r.planId === planId && recordDate === date && recordTime === time;
     });
   };
@@ -138,13 +137,18 @@ const MedicationPage: React.FC = () => {
     const recordId = record?.id || (plan.id + '_' + date + '_' + time);
     const takenAt = date + ' ' + time;
     
-    const actualTakenTime = record?.status === 'taken' || detailTime !== time
+    if (!record || record.status === 'pending') {
+      Taro.showToast({ title: '请先标记为已服或漏服', icon: 'none' });
+      return;
+    }
+    
+    const actualTakenTime = record.status === 'taken' || detailTime !== time
       ? dayjs(date + ' ' + detailTime).toISOString()
       : undefined;
 
     updateMedicationStatus(
       recordId,
-      record?.status || 'pending',
+      record.status,
       takenAt,
       plan.id,
       {

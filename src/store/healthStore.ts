@@ -435,6 +435,14 @@ export const useTodayMedications = () => {
   const records = useHealthStore((state) => state.medicationRecords);
   const today = dayjs().format('YYYY-MM-DD');
   return records.filter(
-    (r) => dayjs(r.takenAt).format('YYYY-MM-DD') === today
+    (r) => dayjs(r.scheduledTime).format('YYYY-MM-DD') === today
   );
+};
+
+export const useUpcomingFollowUp = () => {
+  const plans = useHealthStore((state) => state.followUpPlans);
+  const upcoming = plans
+    .filter((p) => p.status === 'pending')
+    .sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
+  return upcoming[0] || null;
 };

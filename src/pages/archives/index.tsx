@@ -143,6 +143,23 @@ const ArchivesPage: React.FC = () => {
           const statusText = plan.status === 'completed' ? '已完成' : '待复诊';
           lines.push(`  ${idx + 1}. [${plan.date} ${plan.time}] ${plan.title} - ${statusText}`);
           lines.push(`     医院: ${plan.hospital}, 科室: ${plan.department}`);
+          if (plan.doctor) lines.push(`     医生: ${plan.doctor}`);
+          if (plan.notes) lines.push(`     备注: ${plan.notes}`);
+        });
+        lines.push('');
+      }
+    }
+
+    if (includeFollowUps && archive.medicalReports) {
+      const reports = archive.medicalReports as Record<string, unknown>[];
+      if (reports.length > 0) {
+        lines.push('【检查报告】');
+        reports.forEach((report, idx) => {
+          lines.push(`  ${idx + 1}. ${report.title}`);
+          lines.push(`     医院: ${report.hospital}, 日期: ${report.date}`);
+          lines.push(`     类型: ${report.type}`);
+          if (report.description) lines.push(`     描述: ${report.description}`);
+          if (report.notes) lines.push(`     备注: ${report.notes}`);
         });
         lines.push('');
       }
