@@ -1,0 +1,320 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 40rpx);
+}
+
+.content {
+  padding: $page-padding;
+}
+
+.alertBanner {
+  background: linear-gradient(135deg, $color-error 0%, #F87171 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  color: $color-text-white;
+  margin-bottom: $spacing-lg;
+}
+
+.alertTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-xs;
+}
+
+.alertDesc {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.section {
+  margin-bottom: $spacing-lg;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.sectionTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.sectionAction {
+  font-size: $font-size-sm;
+  color: $color-primary;
+}
+
+.formCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.formGroup {
+  margin-bottom: $spacing-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.formLabel {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  margin-bottom: $spacing-sm;
+  display: block;
+}
+
+.required {
+  color: $color-error;
+  margin-right: 4rpx;
+}
+
+.formInput {
+  width: 100%;
+  height: 88rpx;
+  padding: 0 $spacing-md;
+  border: 2rpx solid $color-divider;
+  border-radius: $radius-md;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  background: $color-bg-secondary;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: $color-primary;
+  }
+}
+
+.formTextarea {
+  width: 100%;
+  min-height: 200rpx;
+  padding: $spacing-md;
+  border: 2rpx solid $color-divider;
+  border-radius: $radius-md;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  background: $color-bg-secondary;
+  box-sizing: border-box;
+  line-height: 1.6;
+}
+
+.typeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-sm;
+}
+
+.typeItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-md;
+  border: 2rpx solid $color-divider;
+  border-radius: $radius-md;
+  background: $color-bg-secondary;
+  transition: all $transition-base;
+
+  &.active {
+    border-color: $color-error;
+    background: rgba(239, 68, 68, 0.05);
+  }
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.typeIcon {
+  font-size: 40rpx;
+  margin-bottom: $spacing-xs;
+}
+
+.typeText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+
+  .active & {
+    color: $color-error;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.levelRow {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.levelItem {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-md;
+  border: 2rpx solid $color-divider;
+  border-radius: $radius-md;
+  background: $color-bg-secondary;
+  transition: all $transition-base;
+
+  &.active {
+    border-color: $color-error;
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  &.active.mild {
+    border-color: #F59E0B;
+    background: rgba(245, 158, 11, 0.1);
+  }
+
+  &.active.moderate {
+    border-color: #F97316;
+    background: rgba(249, 115, 22, 0.1);
+  }
+
+  &.active.severe {
+    border-color: $color-error;
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.levelText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+
+  .active & {
+    color: $color-error;
+    font-weight: $font-weight-semibold;
+  }
+
+  .active.mild & {
+    color: #F59E0B;
+  }
+
+  .active.moderate & {
+    color: #F97316;
+  }
+
+  .active.severe & {
+    color: $color-error;
+  }
+}
+
+.emergencyTips {
+  background: rgba(239, 68, 68, 0.05);
+  border: 2rpx solid rgba(239, 68, 68, 0.2);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.tipsTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-error;
+  margin-bottom: $spacing-xs;
+}
+
+.tipsText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: 1.6;
+}
+
+.submitBtn {
+  @include button-reset;
+  width: 100%;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  background: linear-gradient(135deg, $color-error 0%, #F87171 100%);
+  color: $color-text-white;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  margin-top: $spacing-md;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.historySection {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.historyItem {
+  padding: $spacing-md 0;
+  border-bottom: 1rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.historyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-xs;
+}
+
+.historyType {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.historyLevel {
+  padding: 2rpx $spacing-sm;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+
+  &.mild {
+    background: rgba(245, 158, 11, 0.1);
+    color: #F59E0B;
+  }
+
+  &.moderate {
+    background: rgba(249, 115, 22, 0.1);
+    color: #F97316;
+  }
+
+  &.severe {
+    background: rgba(239, 68, 68, 0.1);
+    color: $color-error;
+  }
+}
+
+.historyDesc {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xs;
+  line-height: 1.5;
+}
+
+.historyTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.empty {
+  text-align: center;
+  padding: $spacing-xxl;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}

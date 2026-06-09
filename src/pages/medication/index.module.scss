@@ -1,0 +1,235 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 40rpx);
+}
+
+.content {
+  padding: $page-padding;
+}
+
+.summaryCard {
+  background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  color: $color-text-white;
+  margin-bottom: $spacing-lg;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.summaryValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  margin-bottom: $spacing-xs;
+}
+
+.summaryLabel {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.section {
+  margin-bottom: $spacing-lg;
+}
+
+.sectionTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.sectionAction {
+  font-size: $font-size-sm;
+  color: $color-primary;
+}
+
+.planList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.planCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  border-left: 8rpx solid #8B5CF6;
+}
+
+.planHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-md;
+}
+
+.planName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.planDosage {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.timesList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+}
+
+.timeItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md;
+  background: $color-bg-secondary;
+  border-radius: $radius-md;
+}
+
+.timeLeft {
+  display: flex;
+  flex-direction: column;
+}
+
+.timeText {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  font-family: monospace;
+}
+
+.timeLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.timeActions {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.timeBtn {
+  @include button-reset;
+  padding: 0 $spacing-md;
+  height: 56rpx;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+
+  &.taken {
+    background: $color-primary;
+    color: $color-text-white;
+  }
+
+  &.missed {
+    background: $color-error;
+    color: $color-text-white;
+  }
+
+  &.pending {
+    background: $color-bg-hover;
+    color: $color-text-secondary;
+  }
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.planFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: $spacing-md;
+  border-top: 1rpx solid $color-divider;
+}
+
+.planNote {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.recordCount {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.historySection {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.historyItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md 0;
+  border-bottom: 1rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.historyLeft {
+  display: flex;
+  flex-direction: column;
+}
+
+.historyMed {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.historyTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.statusBadge {
+  padding: 4rpx $spacing-sm;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+
+  &.taken {
+    background: rgba(34, 197, 94, 0.1);
+    color: $color-primary;
+  }
+
+  &.missed {
+    background: rgba(239, 68, 68, 0.1);
+    color: $color-error;
+  }
+
+  &.pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: $color-warning;
+  }
+}
+
+.empty {
+  text-align: center;
+  padding: $spacing-xxl;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}

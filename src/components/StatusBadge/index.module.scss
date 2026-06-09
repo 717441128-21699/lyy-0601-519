@@ -1,0 +1,57 @@
+@use '@/styles/variables.scss' as *;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-round;
+  white-space: nowrap;
+
+  &.sm {
+    padding: 4rpx 16rpx;
+    .text {
+      font-size: $font-size-xs;
+    }
+  }
+
+  &.md {
+    padding: 8rpx 24rpx;
+    .text {
+      font-size: $font-size-sm;
+    }
+  }
+
+  &.normal {
+    background: rgba(34, 197, 94, 0.1);
+    color: $color-success;
+  }
+
+  &.warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: $color-warning;
+  }
+
+  &.danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: $color-error;
+  }
+
+  &.success {
+    background: rgba(34, 197, 94, 0.1);
+    color: $color-success;
+  }
+
+  &.info {
+    background: rgba(59, 130, 246, 0.1);
+    color: $color-info;
+  }
+
+  &.pending {
+    background: rgba(100, 116, 139, 0.1);
+    color: $color-text-secondary;
+  }
+}
+
+.text {
+  font-weight: $font-weight-medium;
+}

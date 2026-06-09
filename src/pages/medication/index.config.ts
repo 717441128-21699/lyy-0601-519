@@ -1,0 +1,4 @@
+export default definePageConfig({
+  navigationBarTitleText: '用药提醒',
+  enablePullDownRefresh: true,
+});

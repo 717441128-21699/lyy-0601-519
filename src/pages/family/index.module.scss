@@ -1,0 +1,345 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 120rpx);
+}
+
+.content {
+  padding: $spacing-lg $page-padding;
+}
+
+.section {
+  margin-bottom: $spacing-lg;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.sectionAction {
+  font-size: $font-size-sm;
+  color: $color-primary;
+}
+
+.memberList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.memberCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  display: flex;
+  align-items: center;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+.memberAvatar {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $color-text-white;
+  font-size: 36rpx;
+  font-weight: $font-weight-bold;
+  margin-right: $spacing-lg;
+}
+
+.memberInfo {
+  flex: 1;
+}
+
+.memberName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.memberMeta {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-xs;
+}
+
+.roleTag {
+  display: inline-block;
+  font-size: $font-size-xs;
+  padding: 2rpx 12rpx;
+  border-radius: $radius-round;
+  background: rgba(34, 197, 94, 0.1);
+  color: $color-primary;
+  margin-right: $spacing-sm;
+
+  &.emergency {
+    background: rgba(239, 68, 68, 0.1);
+    color: $color-error;
+  }
+}
+
+.callButton {
+  @include button-reset;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.1);
+  color: $color-primary;
+  font-size: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.taskTabBar {
+  display: flex;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: 4rpx;
+  margin-bottom: $spacing-md;
+}
+
+.taskTab {
+  flex: 1;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  transition: all $transition-base;
+
+  &.active {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    color: $color-text-white;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.taskCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  border-left: 8rpx solid transparent;
+
+  &.pending {
+    border-left-color: $color-warning;
+  }
+
+  &.inProgress {
+    border-left-color: $color-info;
+  }
+
+  &.completed {
+    border-left-color: $color-success;
+  }
+}
+
+.taskHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.taskTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.taskStatus {
+  font-size: $font-size-xs;
+  padding: 4rpx 16rpx;
+  border-radius: $radius-round;
+
+  &.pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: $color-warning;
+  }
+
+  &.inProgress {
+    background: rgba(59, 130, 246, 0.1);
+    color: $color-info;
+  }
+
+  &.completed {
+    background: rgba(34, 197, 94, 0.1);
+    color: $color-success;
+  }
+}
+
+.taskDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-md;
+  line-height: 1.5;
+}
+
+.taskFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.taskAssignee {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.taskDue {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.taskAction {
+  @include button-reset;
+  padding: 0 $spacing-md;
+  height: 56rpx;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.messageSection {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  padding: $spacing-lg;
+}
+
+.messageList {
+  max-height: 600rpx;
+  overflow-y: auto;
+  margin-bottom: $spacing-md;
+}
+
+.messageItem {
+  margin-bottom: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.messageHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-xs;
+}
+
+.messageSender {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-right: $spacing-sm;
+}
+
+.messageTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.messageContent {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+  padding: $spacing-sm $spacing-md;
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  border-top-left-radius: 4rpx;
+}
+
+.inputRow {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.messageInput {
+  flex: 1;
+  height: 80rpx;
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  padding: 0 $spacing-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.sendButton {
+  @include button-reset;
+  padding: 0 $spacing-lg;
+  height: 80rpx;
+  border-radius: $radius-md;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.empty {
+  text-align: center;
+  padding: $spacing-xxl;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+}
+
+.fabButton {
+  position: fixed;
+  right: $page-padding;
+  bottom: calc(env(safe-area-inset-bottom) + 120rpx);
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+  font-size: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: $shadow-popup;
+  z-index: 100;
+
+  &:active {
+    transform: scale(0.95);
+  }
+}

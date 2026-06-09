@@ -1,0 +1,317 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 120rpx);
+}
+
+.tabBar {
+  display: flex;
+  background: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  gap: $spacing-sm;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: $shadow-float;
+}
+
+.tabItem {
+  flex: 1;
+  height: $button-height-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  transition: all $transition-base;
+
+  &.active {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    color: $color-text-white;
+    font-weight: $font-weight-medium;
+  }
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.content {
+  padding: 0 $page-padding;
+  padding-top: $spacing-lg;
+}
+
+.recordForm {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-lg;
+}
+
+.formTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-lg;
+}
+
+.formRow {
+  margin-bottom: $spacing-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.formLabel {
+  display: block;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.inputWrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  padding: 0 $spacing-md;
+  height: 88rpx;
+}
+
+.inputField {
+  flex: 1;
+  font-size: $font-size-lg;
+  color: $color-text-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.inputUnit {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-left: $spacing-sm;
+}
+
+.segmentedControl {
+  display: flex;
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  padding: 4rpx;
+}
+
+.segmentedItem {
+  flex: 1;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  transition: all $transition-base;
+
+  &.active {
+    background: $color-bg-card;
+    color: $color-primary;
+    font-weight: $font-weight-medium;
+    box-shadow: $shadow-card;
+  }
+}
+
+.textareaField {
+  width: 100%;
+  min-height: 120rpx;
+  padding: $spacing-md;
+  background: $color-bg-hover;
+  border-radius: $radius-md;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+  box-sizing: border-box;
+}
+
+.submitButton {
+  @include button-reset;
+  width: 100%;
+  height: $button-height-lg;
+  border-radius: $radius-button;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  margin-top: $spacing-lg;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.filterTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.filterButtons {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.filterButton {
+  @include button-reset;
+  padding: 0 $spacing-md;
+  height: 56rpx;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  background: $color-bg-card;
+  color: $color-text-secondary;
+  border: 1rpx solid $color-border;
+
+  &.active {
+    background: rgba(34, 197, 94, 0.1);
+    color: $color-primary;
+    border-color: $color-primary;
+  }
+}
+
+.chartSection {
+  margin-bottom: $spacing-lg;
+}
+
+.recordsList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.recordItem {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+
+  &.abnormal {
+    border: 2rpx solid $color-error;
+    background: linear-gradient(135deg, #FEF2F2 0%, $color-bg-card 100%);
+  }
+
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+.recordHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.recordTime {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.recordValueRow {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: $spacing-sm;
+}
+
+.recordValue {
+  font-size: 48rpx;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  line-height: 1.1;
+
+  &.abnormal {
+    color: $color-error;
+  }
+}
+
+.recordUnit {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+  margin-left: $spacing-sm;
+}
+
+.recordMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  margin-top: $spacing-sm;
+}
+
+.metaTag {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  background: $color-bg-hover;
+  padding: 4rpx 12rpx;
+  border-radius: $radius-sm;
+}
+
+.recordNote {
+  margin-top: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1rpx solid $color-divider;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+}
+
+.emptyState {
+  text-align: center;
+  padding: $spacing-xxl;
+}
+
+.emptyIcon {
+  font-size: 80rpx;
+  margin-bottom: $spacing-md;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+  margin-top: $spacing-lg;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.toggleButton {
+  @include button-reset;
+  padding: 0 $spacing-md;
+  height: 56rpx;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  background: rgba(34, 197, 94, 0.1);
+  color: $color-primary;
+}

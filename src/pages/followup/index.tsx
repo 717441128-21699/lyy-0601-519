@@ -1,0 +1,241 @@
+import React, { useMemo } from 'react';
+import { View, Text, Button, ScrollView, Image } from '@tarojs/components';
+import Taro, { useDidShow } from '@tarojs/taro';
+import dayjs from 'dayjs';
+import classnames from 'classnames';
+import { useHealthStore } from '@/store/healthStore';
+import { formatDate } from '@/utils';
+import type { FollowUpPlan, MedicalReport } from '@/types';
+import styles from './index.module.scss';
+
+const FollowUpPage: React.FC = () => {
+  const followUpPlans = useHealthStore((state) => state.followUpPlans);
+  const medicalReports = useHealthStore((state) => state.medicalReports);
+  const addMedicalReport = useHealthStore((state) => state.addMedicalReport);
+  const updateFollowUpStatus = useHealthStore((state) => state.updateFollowUpStatus);
+
+  useDidShow(() => {
+    console.log('[FollowUp] 页面显示');
+  });
+
+  const getPlanStatus = (plan: FollowUpPlan) => {
+    if (plan.status === 'completed' || plan.status === 'cancelled') return plan.status;
+    const today = dayjs();
+    const planDate = dayjs(plan.date);
+    if (planDate.isBefore(today, 'day')) return 'overdue';
+    if (planDate.diff(today, 'day') <= 7) return 'upcoming';
+    return 'upcoming';
+  };
+
+  const getDaysLeft = (date: string) => {
+    const diff = dayjs(date).startOf('day').diff(dayjs().startOf('day'), 'day');
+    if (diff < 0) return `已逾期 ${Math.abs(diff)} 天`;
+    if (diff === 0) return '今天';
+    if (diff === 1) return '明天';
+    return `还有 ${diff} 天`;
+  };
+
+  const stats = useMemo(() => {
+    const upcoming = followUpPlans.filter((p) => getPlanStatus(p) === 'upcoming').length;
+    const overdue = followUpPlans.filter((p) => getPlanStatus(p) === 'overdue').length;
+    const completed = followUpPlans.filter((p) => p.status === 'completed').length;
+    return { upcoming, overdue, completed, reports: medicalReports.length };
+  }, [followUpPlans, medicalReports]);
+
+  const sortedPlans = useMemo(() => {
+    return [...followUpPlans].sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
+  }, [followUpPlans]);
+
+  const getStatusText = (status: string) => {
+    const texts: Record<string, string> = {
+      upcoming: '待复诊',
+      overdue: '已逾期',
+      completed: '已完成',
+      cancelled: '已取消',
+    };
+    return texts[status] || status;
+  };
+
+  const handleComplete = (plan: FollowUpPlan) => {
+    Taro.showModal({
+      title: '确认完成',
+      content: '确认本次复诊已完成？',
+      success: (res) => {
+        if (res.confirm) {
+          updateFollowUpStatus(plan.id, 'completed');
+          Taro.showToast({ title: '已标记完成', icon: 'success' });
+          console.log('[FollowUp] 复诊完成:', plan.id);
+        }
+      },
+    });
+  };
+
+  const handleUpload = () => {
+    console.log('[FollowUp] 上传检查报告');
+    Taro.chooseImage({
+      count: 1,
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        const tempFilePath = res.tempFilePaths[0];
+        addMedicalReport({
+          title: '检查报告',
+          type: '检查报告',
+          date: dayjs().format('YYYY-MM-DD'),
+          hospital: '手动上传',
+          imageUrl: tempFilePath,
+          description: '',
+          notes: '',
+        });
+        Taro.showToast({ title: '上传成功', icon: 'success' });
+        console.log('[FollowUp] 报告上传成功:', tempFilePath);
+      },
+      fail: (err) => console.error('[FollowUp] 上传失败:', err),
+    });
+  };
+
+  const handleViewReport = (report: MedicalReport) => {
+    console.log('[FollowUp] 查看报告:', report.id);
+    if (report.imageUrl) {
+      Taro.previewImage({ urls: [report.imageUrl] });
+    } else {
+      Taro.showToast({ title: '暂无图片', icon: 'none' });
+    }
+  };
+
+  const handleSetReminder = (plan: FollowUpPlan) => {
+    console.log('[FollowUp] 设置提醒:', plan.id);
+    Taro.showToast({ title: '已设置复诊提醒', icon: 'success' });
+  };
+
+  return (
+    <ScrollView className={styles.page} scrollY>
+      <View className={styles.content}>
+        <View className={styles.summaryCard}>
+          <View className={styles.summaryRow}>
+            <View className={styles.summaryItem}>
+              <Text className={styles.summaryValue}>{stats.upcoming}</Text>
+              <Text className={styles.summaryLabel}>待复诊</Text>
+            </View>
+            <View className={styles.summaryItem}>
+              <Text className={styles.summaryValue}>{stats.overdue}</Text>
+              <Text className={styles.summaryLabel}>已逾期</Text>
+            </View>
+            <View className={styles.summaryItem}>
+              <Text className={styles.summaryValue}>{stats.reports}</Text>
+              <Text className={styles.summaryLabel}>检查报告</Text>
+            </View>
+          </View>
+        </View>
+
+        <View className={styles.section}>
+          <View className={styles.sectionHeader}>
+            <Text className={styles.sectionTitle}>复诊计划</Text>
+            <Text
+              className={styles.sectionAction}
+              onClick={() => Taro.showToast({ title: '添加计划', icon: 'none' })}
+            >
+              + 添加
+            </Text>
+          </View>
+          <View className={styles.planList}>
+            {sortedPlans.map((plan) => {
+              const status = getPlanStatus(plan);
+              return (
+                <View
+                  key={plan.id}
+                  className={classnames(styles.planCard, styles[status])}
+                >
+                  <View className={styles.planHeader}>
+                    <View>
+                      <Text className={styles.planHospital}>{plan.hospital}</Text>
+                      <Text className={styles.planDoctor}>{plan.department} · {plan.doctor}</Text>
+                    </View>
+                    <Text className={classnames(styles.statusBadge, styles[status])}>
+                      {getStatusText(status)}
+                    </Text>
+                  </View>
+                  <View className={styles.planDateRow}>
+                    <View className={styles.dateIcon}>📅</View>
+                    <View className={styles.dateInfo}>
+                      <Text className={styles.dateText}>{formatDate(plan.date)}</Text>
+                      <Text className={styles.dateLabel}>{plan.time || '具体时间待定'}</Text>
+                    </View>
+                    <Text className={styles.daysLeft}>{getDaysLeft(plan.date)}</Text>
+                  </View>
+                  {plan.notes && (
+                    <Text className={styles.planNotes}>📝 {plan.notes}</Text>
+                  )}
+                  {status !== 'completed' && status !== 'cancelled' && (
+                    <View className={styles.planFooter}>
+                      <Button
+                        className={classnames(styles.planBtn, styles.secondary)}
+                        onClick={() => handleSetReminder(plan)}
+                      >
+                        设置提醒
+                      </Button>
+                      <Button
+                        className={classnames(styles.planBtn, styles.primary)}
+                        onClick={() => handleComplete(plan)}
+                      >
+                        标记完成
+                      </Button>
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        </View>
+
+        <View className={styles.section}>
+          <View className={styles.sectionHeader}>
+            <Text className={styles.sectionTitle}>检查报告</Text>
+            <Text className={styles.sectionAction}>共 {medicalReports.length} 份</Text>
+          </View>
+          <View className={styles.uploadSection}>
+            <Button className={styles.uploadButton} onClick={handleUpload}>
+              <Text className={styles.uploadIcon}>📷</Text>
+              <Text className={styles.uploadText}>拍摄或上传检查报告</Text>
+            </Button>
+          </View>
+        </View>
+
+        <View className={styles.section}>
+          <View className={styles.reportsSection}>
+            {medicalReports.length > 0 ? (
+              medicalReports.map((report) => (
+                <View
+                  key={report.id}
+                  className={styles.reportItem}
+                  onClick={() => handleViewReport(report)}
+                >
+                  {report.imageUrl ? (
+                    <Image
+                      className={styles.reportIcon}
+                      src={report.imageUrl}
+                      mode="aspectFill"
+                    />
+                  ) : (
+                    <View className={styles.reportIcon}>报</View>
+                  )}
+                  <View className={styles.reportInfo}>
+                    <Text className={styles.reportName}>{report.type}</Text>
+                    <Text className={styles.reportDate}>
+                      {formatDate(report.date)} · {report.hospital}
+                    </Text>
+                  </View>
+                  <Text className={styles.reportArrow}>›</Text>
+                </View>
+              ))
+            ) : (
+              <View className={styles.empty}>暂无检查报告</View>
+            )}
+          </View>
+        </View>
+      </View>
+    </ScrollView>
+  );
+};
+
+export default FollowUpPage;

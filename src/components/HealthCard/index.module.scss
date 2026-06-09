@@ -1,0 +1,93 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    box-shadow: $shadow-card-hover;
+  }
+
+  &.abnormal {
+    border: 2rpx solid $color-error;
+    background: linear-gradient(135deg, #FEF2F2 0%, $color-bg-card 100%);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.typeIndicator {
+  width: 8rpx;
+  height: 32rpx;
+  border-radius: $radius-sm;
+  margin-right: $spacing-sm;
+}
+
+.typeName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.valueRow {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: $spacing-sm;
+}
+
+.value {
+  font-size: 56rpx;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  line-height: 1.1;
+
+  &.valueAbnormal {
+    color: $color-error;
+  }
+}
+
+.unit {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+  margin-left: $spacing-sm;
+}
+
+.extra {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-top: $spacing-xs;
+}
+
+.details {
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1rpx solid $color-divider;
+}
+
+.note {
+  display: block;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+  margin-top: $spacing-xs;
+}
+
+.time,
+.recorder {
+  display: block;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+}
