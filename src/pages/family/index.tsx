@@ -4,8 +4,8 @@ import Taro, { useDidShow } from '@tarojs/taro';
 import classnames from 'classnames';
 import dayjs from 'dayjs';
 import { useHealthStore } from '@/store/healthStore';
-import { formatDate, getRelativeTime, generateId } from '@/utils';
-import type { CareTask, TaskComment, StatusHistory } from '@/types';
+import { formatDate, getRelativeTime } from '@/utils';
+import type { CareTask } from '@/types';
 import styles from './index.module.scss';
 
 type TaskFilter = 'all' | 'pending' | 'inProgress' | 'completed';
@@ -479,7 +479,7 @@ const FamilyPage: React.FC = () => {
                 <View className={styles.detailSection}>
                   <Text className={styles.sectionSubtitle}>状态流转</Text>
                   <View className={styles.statusTimeline}>
-                    {selectedTask.statusHistory.map((history, idx) => (
+                    {selectedTask.statusHistory.map((history) => (
                       <View key={history.id} className={styles.timelineItem}>
                         <View className={styles.timelineDot} />
                         <View className={styles.timelineContent}>

@@ -363,7 +363,7 @@ export const useHealthStore = create<HealthState>((set, get) => ({
     const filteredRecords = state.healthRecords.filter((r) => {
       const date = dayjs(r.recordedAt);
       const typeMatch = opts.recordTypes.includes(r.type);
-      return date.isSameOrAfter(start) && date.isSameOrBefore(end) && typeMatch;
+      return !date.isBefore(start) && !date.isAfter(end) && typeMatch;
     });
 
     const archive: Record<string, unknown> = {
@@ -377,18 +377,18 @@ export const useHealthStore = create<HealthState>((set, get) => ({
       archive.medicationPlans = state.medicationPlans;
       archive.medicationRecords = state.medicationRecords.filter((r) => {
         const date = dayjs(r.takenAt);
-        return date.isSameOrAfter(start) && date.isSameOrBefore(end);
+        return !date.isBefore(start) && !date.isAfter(end);
       });
     }
 
     if (opts.includeFollowUp) {
       archive.followUpPlans = state.followUpPlans.filter((f) => {
         const date = dayjs(f.date);
-        return date.isSameOrAfter(start) && date.isSameOrBefore(end);
+        return !date.isBefore(start) && !date.isAfter(end);
       });
       archive.medicalReports = state.medicalReports.filter((r) => {
         const date = dayjs(r.date);
-        return date.isSameOrAfter(start) && date.isSameOrBefore(end);
+        return !date.isBefore(start) && !date.isAfter(end);
       });
     }
 
