@@ -4,8 +4,8 @@ import Taro, { useDidShow } from '@tarojs/taro';
 import classnames from 'classnames';
 import dayjs from 'dayjs';
 import { useHealthStore } from '@/store/healthStore';
-import { formatDate, getRelativeTime } from '@/utils';
-import type { CareTask } from '@/types';
+import { formatDate, getRelativeTime, generateId } from '@/utils';
+import type { CareTask, TaskComment, StatusHistory } from '@/types';
 import styles from './index.module.scss';
 
 type TaskFilter = 'all' | 'pending' | 'inProgress' | 'completed';
@@ -18,6 +18,12 @@ const FamilyPage: React.FC = () => {
   const [taskDescription, setTaskDescription] = useState('');
   const [selectedAssignee, setSelectedAssignee] = useState('');
   const [dueDate, setDueDate] = useState(dayjs().add(1, 'day').format('YYYY-MM-DD'));
+  
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<CareTask | null>(null);
+  const [commentText, setCommentText] = useState('');
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [completionNote, setCompletionNote] = useState('');
 
   const familyMembers = useHealthStore((state) => state.familyMembers);
   const careTasks = useHealthStore((state) => state.careTasks);
@@ -26,6 +32,7 @@ const FamilyPage: React.FC = () => {
   const updateCareTaskStatus = useHealthStore((state) => state.updateCareTaskStatus);
   const addFamilyMessage = useHealthStore((state) => state.addFamilyMessage);
   const addCareTask = useHealthStore((state) => state.addCareTask);
+  const addTaskComment = useHealthStore((state) => state.addTaskComment);
 
   useDidShow(() => {
     console.log('[Family] 页面显示，任务数量:', careTasks.length);
@@ -69,6 +76,74 @@ const FamilyPage: React.FC = () => {
     console.log('[Family] 任务已创建:', taskTitle, '负责人:', assignee.name, '截止:', dueDate);
   };
 
+  const openTaskDetail = (task: CareTask) => {
+    const freshTask = careTasks.find(t => t.id === task.id) || task;
+    setSelectedTask(freshTask);
+    setCommentText('');
+    setShowDetailModal(true);
+  };
+
+  const handleAddComment = () => {
+    if (!selectedTask || !commentText.trim()) {
+      Taro.showToast({ title: '请输入评论内容', icon: 'none' });
+      return;
+    }
+
+    addTaskComment(selectedTask.id, {
+      content: commentText.trim(),
+      author: userProfile.name,
+    });
+
+    setCommentText('');
+    
+    const updatedTask = careTasks.find(t => t.id === selectedTask.id);
+    if (updatedTask) {
+      setSelectedTask({ ...updatedTask });
+    }
+    Taro.showToast({ title: '评论已发送', icon: 'success' });
+  };
+
+  const handleStatusChange = (task: CareTask, newStatus: CareTask['status']) => {
+    if (newStatus === 'completed') {
+      setSelectedTask(task);
+      setCompletionNote('');
+      setShowCompleteModal(true);
+      return;
+    }
+
+    updateCareTaskStatus(task.id, newStatus, {
+      operatedBy: userProfile.name,
+    });
+    
+    const updatedTask = careTasks.find(t => t.id === task.id);
+    if (updatedTask) {
+      setSelectedTask({ ...updatedTask });
+    }
+    Taro.showToast({ title: '状态已更新', icon: 'success' });
+  };
+
+  const handleCompleteTask = () => {
+    if (!selectedTask) return;
+    
+    updateCareTaskStatus(selectedTask.id, 'completed', {
+      note: completionNote.trim() || undefined,
+      operatedBy: userProfile.name,
+    });
+    
+    setShowCompleteModal(false);
+    setShowDetailModal(false);
+    Taro.showToast({ title: '任务已完成', icon: 'success' });
+  };
+
+  const getStatusText = (status: string) => {
+    const texts: Record<string, string> = {
+      pending: '待开始',
+      inProgress: '进行中',
+      completed: '已完成',
+    };
+    return texts[status] || status;
+  };
+
   const filteredTasks = useMemo(() => {
     if (taskFilter === 'all') return careTasks;
     return careTasks.filter((t) => t.status === taskFilter);
@@ -82,14 +157,13 @@ const FamilyPage: React.FC = () => {
     });
   };
 
-  const handleTaskAction = (task: CareTask) => {
+  const handleTaskAction = (task: CareTask, e?: any) => {
+    if (e) e.stopPropagation();
     console.log('[Family] 更新任务状态:', task.id);
     if (task.status === 'pending') {
-      updateCareTaskStatus(task.id, 'inProgress');
-      Taro.showToast({ title: '任务已开始', icon: 'success' });
+      handleStatusChange(task, 'inProgress');
     } else if (task.status === 'inProgress') {
-      updateCareTaskStatus(task.id, 'completed');
-      Taro.showToast({ title: '任务已完成', icon: 'success' });
+      handleStatusChange(task, 'completed');
     }
   };
 
@@ -187,7 +261,11 @@ const FamilyPage: React.FC = () => {
           <View className={styles.taskList}>
             {filteredTasks.length > 0 ? (
               filteredTasks.map((task) => (
-                <View key={task.id} className={classnames(styles.taskCard, styles[task.status])}>
+                <View 
+                  key={task.id} 
+                  className={classnames(styles.taskCard, styles[task.status], styles.clickable)}
+                  onClick={() => openTaskDetail(task)}
+                >
                   <View className={styles.taskHeader}>
                     <Text className={styles.taskTitle}>{task.title}</Text>
                     <Text className={classnames(styles.taskStatus, styles[task.status])}>
@@ -205,7 +283,7 @@ const FamilyPage: React.FC = () => {
                     {task.status !== 'completed' && (
                       <Button
                         className={styles.taskAction}
-                        onClick={() => handleTaskAction(task)}
+                        onClick={(e) => handleTaskAction(task, e)}
                       >
                         {task.status === 'pending' ? '开始' : '完成'}
                       </Button>
@@ -334,6 +412,182 @@ const FamilyPage: React.FC = () => {
               </Button>
               <Button className={styles.modalConfirm} onClick={handleCreateTask}>
                 创建任务
+              </Button>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {showDetailModal && selectedTask && (
+        <View className={styles.modalOverlay} onClick={() => setShowDetailModal(false)}>
+          <View className={classnames(styles.modalContent, styles.largeModal)} onClick={(e) => e.stopPropagation()}>
+            <View className={styles.modalHeader}>
+              <Text className={styles.modalTitle}>任务详情</Text>
+              <Text className={styles.modalClose} onClick={() => setShowDetailModal(false)}>×</Text>
+            </View>
+
+            <ScrollView className={styles.modalBody} scrollY>
+              <View className={styles.detailHeader}>
+                <View>
+                  <Text className={styles.detailTitle}>{selectedTask.title}</Text>
+                  <Text className={classnames(styles.detailStatus, styles[selectedTask.status])}>
+                    {getStatusText(selectedTask.status)}
+                  </Text>
+                </View>
+              </View>
+
+              <View className={styles.detailInfo}>
+                <View className={styles.infoRow}>
+                  <Text className={styles.infoLabel}>创建人</Text>
+                  <Text className={styles.infoValue}>{selectedTask.createdBy || '未知'}</Text>
+                </View>
+                <View className={styles.infoRow}>
+                  <Text className={styles.infoLabel}>负责人</Text>
+                  <Text className={styles.infoValue}>{selectedTask.assigneeName}</Text>
+                </View>
+                <View className={styles.infoRow}>
+                  <Text className={styles.infoLabel}>创建时间</Text>
+                  <Text className={styles.infoValue}>{formatDate(selectedTask.createdAt)}</Text>
+                </View>
+                <View className={styles.infoRow}>
+                  <Text className={styles.infoLabel}>截止时间</Text>
+                  <Text className={classnames(
+                    styles.infoValue,
+                    dayjs(selectedTask.dueDate).isBefore(dayjs(), 'day') && selectedTask.status !== 'completed' && styles.overdue
+                  )}>
+                    {formatDate(selectedTask.dueDate)}
+                    {dayjs(selectedTask.dueDate).isBefore(dayjs(), 'day') && selectedTask.status !== 'completed' && ' (已逾期)'}
+                  </Text>
+                </View>
+              </View>
+
+              {selectedTask.description && (
+                <View className={styles.detailSection}>
+                  <Text className={styles.sectionSubtitle}>任务描述</Text>
+                  <Text className={styles.detailDesc}>{selectedTask.description}</Text>
+                </View>
+              )}
+
+              {selectedTask.completionNote && (
+                <View className={styles.detailSection}>
+                  <Text className={styles.sectionSubtitle}>完成说明</Text>
+                  <Text className={styles.detailDesc}>📝 {selectedTask.completionNote}</Text>
+                </View>
+              )}
+
+              {selectedTask.statusHistory && selectedTask.statusHistory.length > 0 && (
+                <View className={styles.detailSection}>
+                  <Text className={styles.sectionSubtitle}>状态流转</Text>
+                  <View className={styles.statusTimeline}>
+                    {selectedTask.statusHistory.map((history, idx) => (
+                      <View key={history.id} className={styles.timelineItem}>
+                        <View className={styles.timelineDot} />
+                        <View className={styles.timelineContent}>
+                          <Text className={styles.timelineText}>
+                            {getStatusText(history.fromStatus)} → {getStatusText(history.toStatus)}
+                          </Text>
+                          <Text className={styles.timelineMeta}>
+                            {history.operatedBy} · {dayjs(history.createdAt).format('MM-DD HH:mm')}
+                          </Text>
+                          {history.note && <Text className={styles.timelineNote}>备注: {history.note}</Text>}
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              <View className={styles.detailSection}>
+                <Text className={styles.sectionSubtitle}>家人评论 ({selectedTask.comments?.length || 0})</Text>
+                <View className={styles.commentList}>
+                  {selectedTask.comments && selectedTask.comments.length > 0 ? (
+                    selectedTask.comments.map((comment) => (
+                      <View key={comment.id} className={styles.commentItem}>
+                        <View className={styles.commentHeader}>
+                          <Text className={styles.commentAuthor}>{comment.author}</Text>
+                          <Text className={styles.commentTime}>{dayjs(comment.createdAt).format('MM-DD HH:mm')}</Text>
+                        </View>
+                        <Text className={styles.commentContent}>{comment.content}</Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text className={styles.emptyComment}>暂无评论，快来发表第一条评论吧</Text>
+                  )}
+                </View>
+                <View className={styles.commentInputRow}>
+                  <Input
+                    className={styles.commentInput}
+                    value={commentText}
+                    onInput={(e) => setCommentText(e.detail.value)}
+                    placeholder="输入评论内容..."
+                    confirmType="send"
+                    onConfirm={handleAddComment}
+                  />
+                  <Button className={styles.commentSend} onClick={handleAddComment}>
+                    发送
+                  </Button>
+                </View>
+              </View>
+            </ScrollView>
+
+            <View className={styles.modalFooter}>
+              {selectedTask.status !== 'completed' && (
+                <>
+                  {selectedTask.status === 'pending' && (
+                    <Button
+                      className={classnames(styles.modalConfirm, styles.fullWidth)}
+                      onClick={() => handleStatusChange(selectedTask, 'inProgress')}
+                    >
+                      开始处理
+                    </Button>
+                  )}
+                  {selectedTask.status === 'inProgress' && (
+                    <Button
+                      className={classnames(styles.modalConfirm, styles.fullWidth)}
+                      onClick={() => handleStatusChange(selectedTask, 'completed')}
+                    >
+                      标记完成
+                    </Button>
+                  )}
+                </>
+              )}
+              {selectedTask.status === 'completed' && (
+                <Button
+                  className={classnames(styles.modalCancel, styles.fullWidth)}
+                  onClick={() => setShowDetailModal(false)}
+                >
+                  关闭
+                </Button>
+              )}
+            </View>
+          </View>
+        </View>
+      )}
+
+      {showCompleteModal && selectedTask && (
+        <View className={styles.modalOverlay} onClick={() => setShowCompleteModal(false)}>
+          <View className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <View className={styles.modalHeader}>
+              <Text className={styles.modalTitle}>任务完成说明</Text>
+              <Text className={styles.modalClose} onClick={() => setShowCompleteModal(false)}>×</Text>
+            </View>
+
+            <View className={styles.modalBody}>
+              <Text className={styles.completeHint}>请简要描述任务完成情况（选填）</Text>
+              <Textarea
+                className={styles.formTextarea}
+                value={completionNote}
+                onInput={(e) => setCompletionNote(e.detail.value)}
+                placeholder="如：已完成血压测量，结果正常..."
+              />
+            </View>
+
+            <View className={styles.modalFooter}>
+              <Button className={styles.modalCancel} onClick={() => setShowCompleteModal(false)}>
+                取消
+              </Button>
+              <Button className={styles.modalConfirm} onClick={handleCompleteTask}>
+                确认完成
               </Button>
             </View>
           </View>

@@ -500,4 +500,253 @@
   &:active {
     opacity: 0.9;
   }
+
+  &.fullWidth {
+    flex: none;
+    width: 100%;
+  }
+}
+
+.clickable {
+  cursor: pointer;
+  transition: transform 0.2s;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.largeModal {
+  max-width: 700rpx;
+  max-height: 90vh;
+}
+
+.detailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.detailTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.detailStatus {
+  display: inline-block;
+  padding: 8rpx $spacing-md;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &.pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: $color-warning;
+  }
+
+  &.inProgress {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3B82F6;
+  }
+
+  &.completed {
+    background: rgba(34, 197, 94, 0.1);
+    color: $color-primary;
+  }
+}
+
+.detailInfo {
+  background: $color-bg-secondary;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-sm 0;
+  border-bottom: 1rpx solid $color-divider;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.infoLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.infoValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+
+  &.overdue {
+    color: $color-error;
+  }
+}
+
+.detailSection {
+  margin-bottom: $spacing-lg;
+}
+
+.sectionSubtitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.detailDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+  background: $color-bg-secondary;
+  padding: $spacing-md;
+  border-radius: $radius-md;
+}
+
+.statusTimeline {
+  position: relative;
+  padding-left: $spacing-lg;
+}
+
+.timelineItem {
+  position: relative;
+  padding-bottom: $spacing-md;
+  margin-bottom: $spacing-md;
+  border-left: 2rpx solid $color-divider;
+  padding-left: $spacing-lg;
+  margin-left: -$spacing-xs;
+
+  &:last-child {
+    border-left-color: transparent;
+    margin-bottom: 0;
+  }
+}
+
+.timelineDot {
+  position: absolute;
+  left: -10rpx;
+  top: 8rpx;
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+  background: $color-primary;
+  border: 4rpx solid $color-bg-card;
+}
+
+.timelineText {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  margin-bottom: 4rpx;
+}
+
+.timelineMeta {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-bottom: 4rpx;
+}
+
+.timelineNote {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  background: $color-bg-secondary;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+  margin-top: $spacing-xs;
+}
+
+.commentList {
+  margin-bottom: $spacing-md;
+}
+
+.commentItem {
+  background: $color-bg-secondary;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-sm;
+}
+
+.commentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-xs;
+}
+
+.commentAuthor {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.commentTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.commentContent {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.5;
+}
+
+.emptyComment {
+  text-align: center;
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+  padding: $spacing-lg;
+}
+
+.commentInputRow {
+  display: flex;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+.commentInput {
+  flex: 1;
+  height: 72rpx;
+  padding: 0 $spacing-md;
+  border: 2rpx solid $color-divider;
+  border-radius: $radius-round;
+  font-size: $font-size-sm;
+  background: $color-bg-secondary;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: $color-primary;
+  }
+}
+
+.commentSend {
+  @include button-reset;
+  height: 72rpx;
+  padding: 0 $spacing-lg;
+  border-radius: $radius-round;
+  background: $color-primary;
+  color: $color-text-white;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.completeHint {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-md;
+  display: block;
 }

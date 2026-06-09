@@ -10,6 +10,8 @@ import type {
   AbnormalReport,
   FamilyMember,
   CareTask,
+  TaskComment,
+  StatusHistory,
   FamilyMessage,
   UserProfile,
   PrivacySettings,
@@ -69,12 +71,24 @@ interface HealthState {
 
   // 操作方法
   addHealthRecord: (record: Omit<HealthRecord, 'id' | 'isAbnormal'>) => void;
-  updateMedicationStatus: (recordId: string, status: 'taken' | 'missed', takenAt?: string, planId?: string) => void;
+  updateMedicationStatus: (
+    recordId: string,
+    status: 'taken' | 'missed',
+    takenAt?: string,
+    planId?: string,
+    options?: {
+      actualTakenTime?: string;
+      missedReason?: string;
+      note?: string;
+    }
+  ) => void;
   addCareTask: (task: Omit<CareTask, 'id' | 'createdAt'>) => void;
-  updateCareTaskStatus: (taskId: string, status: CareTask['status']) => void;
+  updateCareTaskStatus: (taskId: string, status: CareTask['status'], options?: { note?: string; operatedBy?: string }) => void;
+  addTaskComment: (taskId: string, comment: Omit<TaskComment, 'id' | 'taskId' | 'createdAt'>) => void;
   addFamilyMessage: (message: Omit<FamilyMessage, 'id' | 'createdAt'>) => void;
   addAbnormalReport: (report: Omit<AbnormalReport, 'id' | 'reportedAt'>) => void;
   addMedicalReport: (report: Omit<MedicalReport, 'id'>) => void;
+  addFollowUpPlan: (plan: Omit<FollowUpPlan, 'id' | 'status'>) => void;
   updateFollowUpStatus: (planId: string, status: FollowUpPlan['status']) => void;
   updatePrivacySettings: (settings: Partial<PrivacySettings>) => void;
   exportArchive: (
@@ -139,8 +153,8 @@ export const useHealthStore = create<HealthState>((set, get) => ({
   },
 
   // 更新用药状态
-  updateMedicationStatus: (recordId, status, takenAt, planId) => {
-    console.log('[Store] 更新用药状态:', recordId, status, takenAt, planId);
+  updateMedicationStatus: (recordId, status, takenAt, planId, options) => {
+    console.log('[Store] 更新用药状态:', recordId, status, takenAt, planId, options);
     set((state) => {
       let newRecords: MedicationRecord[];
       const existingRecord = state.medicationRecords.find((r) => r.id === recordId);
@@ -150,7 +164,10 @@ export const useHealthStore = create<HealthState>((set, get) => ({
             ? {
                 ...record,
                 status,
-                takenAt: takenAt || dayjs().toISOString(),
+                takenAt: takenAt || record.takenAt,
+                actualTakenTime: options?.actualTakenTime || record.actualTakenTime,
+                missedReason: options?.missedReason || record.missedReason,
+                note: options?.note || record.note,
               }
             : record
         );
@@ -162,6 +179,9 @@ export const useHealthStore = create<HealthState>((set, get) => ({
           name: plan?.name || '未知药物',
           scheduledTime: takenAt || dayjs().toISOString(),
           takenAt: takenAt || dayjs().toISOString(),
+          actualTakenTime: options?.actualTakenTime,
+          missedReason: options?.missedReason,
+          note: options?.note,
           status,
         };
         newRecords = [newRecord, ...state.medicationRecords];
@@ -187,12 +207,53 @@ export const useHealthStore = create<HealthState>((set, get) => ({
   },
 
   // 更新任务状态
-  updateCareTaskStatus: (taskId, status) => {
-    console.log('[Store] 更新任务状态:', taskId, status);
+  updateCareTaskStatus: (taskId, status, options) => {
+    console.log('[Store] 更新任务状态:', taskId, status, options);
     set((state) => {
-      const newTasks = state.careTasks.map((task) =>
-        task.id === taskId ? { ...task, status } : task
-      );
+      const newTasks = state.careTasks.map((task) => {
+        if (task.id !== taskId) return task;
+        
+        const statusHistory: StatusHistory = {
+          id: generateId(),
+          taskId,
+          fromStatus: task.status,
+          toStatus: status,
+          note: options?.note,
+          operatedBy: options?.operatedBy || '用户',
+          createdAt: dayjs().toISOString(),
+        };
+
+        return {
+          ...task,
+          status,
+          statusHistory: [...(task.statusHistory || []), statusHistory],
+          completionNote: status === 'completed' ? options?.note : task.completionNote,
+        };
+      });
+      saveToStorage(STORAGE_KEYS.CARE_TASKS, newTasks);
+      return { careTasks: newTasks };
+    });
+  },
+
+  // 添加任务评论
+  addTaskComment: (taskId, comment) => {
+    console.log('[Store] 添加任务评论:', taskId, comment);
+    set((state) => {
+      const newComment: TaskComment = {
+        ...comment,
+        id: generateId(),
+        taskId,
+        createdAt: dayjs().toISOString(),
+      };
+      
+      const newTasks = state.careTasks.map((task) => {
+        if (task.id !== taskId) return task;
+        return {
+          ...task,
+          comments: [...(task.comments || []), newComment],
+        };
+      });
+      
       saveToStorage(STORAGE_KEYS.CARE_TASKS, newTasks);
       return { careTasks: newTasks };
     });
@@ -242,6 +303,21 @@ export const useHealthStore = create<HealthState>((set, get) => ({
     });
   },
 
+  // 添加复诊计划
+  addFollowUpPlan: (plan) => {
+    const newPlan: FollowUpPlan = {
+      ...plan,
+      id: generateId(),
+      status: 'pending',
+    };
+    console.log('[Store] 添加复诊计划:', newPlan);
+    set((state) => {
+      const newPlans = [...state.followUpPlans, newPlan];
+      saveToStorage(STORAGE_KEYS.FOLLOWUP_PLANS, newPlans);
+      return { followUpPlans: newPlans };
+    });
+  },
+
   // 更新复诊计划状态
   updateFollowUpStatus: (planId, status) => {
     console.log('[Store] 更新复诊计划状态:', planId, status);
@@ -287,7 +363,7 @@ export const useHealthStore = create<HealthState>((set, get) => ({
     const filteredRecords = state.healthRecords.filter((r) => {
       const date = dayjs(r.recordedAt);
       const typeMatch = opts.recordTypes.includes(r.type);
-      return date.isAfter(start) && date.isBefore(end) && typeMatch;
+      return date.isSameOrAfter(start) && date.isSameOrBefore(end) && typeMatch;
     });
 
     const archive: Record<string, unknown> = {
@@ -301,18 +377,18 @@ export const useHealthStore = create<HealthState>((set, get) => ({
       archive.medicationPlans = state.medicationPlans;
       archive.medicationRecords = state.medicationRecords.filter((r) => {
         const date = dayjs(r.takenAt);
-        return date.isAfter(start) && date.isBefore(end);
+        return date.isSameOrAfter(start) && date.isSameOrBefore(end);
       });
     }
 
     if (opts.includeFollowUp) {
       archive.followUpPlans = state.followUpPlans.filter((f) => {
         const date = dayjs(f.date);
-        return date.isAfter(start) && date.isBefore(end);
+        return date.isSameOrAfter(start) && date.isSameOrBefore(end);
       });
       archive.medicalReports = state.medicalReports.filter((r) => {
         const date = dayjs(r.date);
-        return date.isAfter(start) && date.isBefore(end);
+        return date.isSameOrAfter(start) && date.isSameOrBefore(end);
       });
     }
 
@@ -332,10 +408,15 @@ export const useTodayRecords = (type?: HealthRecordType) => {
   });
 };
 
-// 获取当天某类型的最新记录（按时间倒序取第一条）
+// 获取当天某类型的最新记录（严格按测量时间倒序取第一条）
 export const useLatestTodayRecord = (type: HealthRecordType) => {
   const todayRecords = useTodayRecords(type);
-  return todayRecords.length > 0 ? todayRecords[0] : null;
+  if (todayRecords.length === 0) return null;
+  
+  const sorted = [...todayRecords].sort((a, b) => 
+    dayjs(b.recordedAt).valueOf() - dayjs(a.recordedAt).valueOf()
+  );
+  return sorted[0];
 };
 
 export const useAbnormalRecords = () => {

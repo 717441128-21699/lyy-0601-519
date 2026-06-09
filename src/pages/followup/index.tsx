@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, Text, Button, ScrollView, Image } from '@tarojs/components';
+import React, { useState, useMemo } from 'react';
+import { View, Text, Button, ScrollView, Image, Input, Textarea, Picker, Switch } from '@tarojs/components';
 import Taro, { useDidShow } from '@tarojs/taro';
 import dayjs from 'dayjs';
 import classnames from 'classnames';
@@ -12,7 +12,18 @@ const FollowUpPage: React.FC = () => {
   const followUpPlans = useHealthStore((state) => state.followUpPlans);
   const medicalReports = useHealthStore((state) => state.medicalReports);
   const addMedicalReport = useHealthStore((state) => state.addMedicalReport);
+  const addFollowUpPlan = useHealthStore((state) => state.addFollowUpPlan);
   const updateFollowUpStatus = useHealthStore((state) => state.updateFollowUpStatus);
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newHospital, setNewHospital] = useState('');
+  const [newDepartment, setNewDepartment] = useState('');
+  const [newDoctor, setNewDoctor] = useState('');
+  const [newDate, setNewDate] = useState(dayjs().add(7, 'day').format('YYYY-MM-DD'));
+  const [newTime, setNewTime] = useState('09:00');
+  const [newNotes, setNewNotes] = useState('');
+  const [newReminder, setNewReminder] = useState(true);
 
   useDidShow(() => {
     console.log('[FollowUp] 页面显示');
@@ -108,6 +119,49 @@ const FollowUpPage: React.FC = () => {
     Taro.showToast({ title: '已设置复诊提醒', icon: 'success' });
   };
 
+  const openAddModal = () => {
+    setNewTitle('');
+    setNewHospital('');
+    setNewDepartment('');
+    setNewDoctor('');
+    setNewDate(dayjs().add(7, 'day').format('YYYY-MM-DD'));
+    setNewTime('09:00');
+    setNewNotes('');
+    setNewReminder(true);
+    setShowAddModal(true);
+  };
+
+  const handleAddFollowUp = () => {
+    if (!newTitle.trim()) {
+      Taro.showToast({ title: '请输入复诊标题', icon: 'none' });
+      return;
+    }
+    if (!newHospital.trim()) {
+      Taro.showToast({ title: '请输入医院名称', icon: 'none' });
+      return;
+    }
+    if (!newDepartment.trim()) {
+      Taro.showToast({ title: '请输入科室', icon: 'none' });
+      return;
+    }
+
+    addFollowUpPlan({
+      title: newTitle.trim(),
+      hospital: newHospital.trim(),
+      department: newDepartment.trim(),
+      doctor: newDoctor.trim() || undefined,
+      date: newDate,
+      time: newTime,
+      description: newNotes.trim() || undefined,
+      notes: newNotes.trim() || undefined,
+      reminder: newReminder,
+    });
+
+    setShowAddModal(false);
+    Taro.showToast({ title: '复诊计划已创建', icon: 'success' });
+    console.log('[FollowUp] 复诊计划已创建:', newTitle, newHospital, newDate);
+  };
+
   return (
     <ScrollView className={styles.page} scrollY>
       <View className={styles.content}>
@@ -131,10 +185,7 @@ const FollowUpPage: React.FC = () => {
         <View className={styles.section}>
           <View className={styles.sectionHeader}>
             <Text className={styles.sectionTitle}>复诊计划</Text>
-            <Text
-              className={styles.sectionAction}
-              onClick={() => Taro.showToast({ title: '添加计划', icon: 'none' })}
-            >
+            <Text className={styles.sectionAction} onClick={openAddModal}>
               + 添加
             </Text>
           </View>
@@ -234,6 +285,115 @@ const FollowUpPage: React.FC = () => {
           </View>
         </View>
       </View>
+
+      {showAddModal && (
+        <View className={styles.modalOverlay} onClick={() => setShowAddModal(false)}>
+          <View className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <View className={styles.modalHeader}>
+              <Text className={styles.modalTitle}>新增复诊计划</Text>
+              <Text className={styles.modalClose} onClick={() => setShowAddModal(false)}>×</Text>
+            </View>
+
+            <ScrollView className={styles.modalBody} scrollY>
+              <View className={styles.formItem}>
+                <Text className={styles.formLabel}>复诊标题 *</Text>
+                <Input
+                  className={styles.formInput}
+                  value={newTitle}
+                  onInput={(e) => setNewTitle(e.detail.value)}
+                  placeholder="如：高血压定期复查"
+                />
+              </View>
+
+              <View className={styles.formItem}>
+                <Text className={styles.formLabel}>医院 *</Text>
+                <Input
+                  className={styles.formInput}
+                  value={newHospital}
+                  onInput={(e) => setNewHospital(e.detail.value)}
+                  placeholder="请输入医院名称"
+                />
+              </View>
+
+              <View className={styles.formItem}>
+                <Text className={styles.formLabel}>科室 *</Text>
+                <Input
+                  className={styles.formInput}
+                  value={newDepartment}
+                  onInput={(e) => setNewDepartment(e.detail.value)}
+                  placeholder="如：心血管内科"
+                />
+              </View>
+
+              <View className={styles.formItem}>
+                <Text className={styles.formLabel}>医生</Text>
+                <Input
+                  className={styles.formInput}
+                  value={newDoctor}
+                  onInput={(e) => setNewDoctor(e.detail.value)}
+                  placeholder="请输入医生姓名（选填）"
+                />
+              </View>
+
+              <View className={styles.formItem}>
+                <Text className={styles.formLabel}>复诊日期 *</Text>
+                <Picker
+                  mode="date"
+                  value={newDate}
+                  start={dayjs().format('YYYY-MM-DD')}
+                  end={dayjs().add(1, 'year').format('YYYY-MM-DD')}
+                  onChange={(e) => setNewDate(e.detail.value)}
+                >
+                  <View className={styles.formPicker}>
+                    <Text className={styles.pickerText}>{newDate}</Text>
+                    <Text className={styles.pickerArrow}>▼</Text>
+                  </View>
+                </Picker>
+              </View>
+
+              <View className={styles.formItem}>
+                <Text className={styles.formLabel}>复诊时间</Text>
+                <Picker
+                  mode="time"
+                  value={newTime}
+                  onChange={(e) => setNewTime(e.detail.value)}
+                >
+                  <View className={styles.formPicker}>
+                    <Text className={styles.pickerText}>{newTime}</Text>
+                    <Text className={styles.pickerArrow}>▼</Text>
+                  </View>
+                </Picker>
+              </View>
+
+              <View className={styles.formItem}>
+                <Text className={styles.formLabel}>备注说明</Text>
+                <Textarea
+                  className={styles.formTextarea}
+                  value={newNotes}
+                  onInput={(e) => setNewNotes(e.detail.value)}
+                  placeholder="请输入备注说明（选填）"
+                />
+              </View>
+
+              <View className={styles.formItem}>
+                <View className={styles.switchRow}>
+                  <Text className={styles.formLabel}>开启提醒</Text>
+                  <Switch checked={newReminder} onChange={(e) => setNewReminder(e.detail.value)} />
+                </View>
+              </View>
+            </ScrollView>
+
+            <View className={styles.modalFooter}>
+              <Button className={styles.modalCancel} onClick={() => setShowAddModal(false)}>
+                取消
+              </Button>
+              <Button className={styles.modalConfirm} onClick={handleAddFollowUp}>
+                创建复诊
+              </Button>
+            </View>
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 };

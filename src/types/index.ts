@@ -60,6 +60,8 @@ export interface MedicationRecord {
   name: string;
   scheduledTime: string;
   takenAt: string;
+  actualTakenTime?: string;
+  missedReason?: string;
   status: 'pending' | 'taken' | 'missed';
   note?: string;
 }
@@ -117,6 +119,24 @@ export interface FamilyMember {
 }
 
 // 照护任务
+export interface TaskComment {
+  id: string;
+  taskId: string;
+  content: string;
+  author: string;
+  createdAt: string;
+}
+
+export interface StatusHistory {
+  id: string;
+  taskId: string;
+  fromStatus: string;
+  toStatus: string;
+  note?: string;
+  operatedBy: string;
+  createdAt: string;
+}
+
 export interface CareTask {
   id: string;
   title: string;
@@ -127,6 +147,9 @@ export interface CareTask {
   status: 'pending' | 'inProgress' | 'completed';
   createdAt: string;
   createdBy?: string;
+  completionNote?: string;
+  comments?: TaskComment[];
+  statusHistory?: StatusHistory[];
 }
 
 // 家人留言
